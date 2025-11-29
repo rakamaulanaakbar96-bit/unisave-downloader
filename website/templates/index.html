@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniSave - Universal Video Downloader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-100 py-4">
+        <div class="container mx-auto px-4 flex items-center justify-between">
+            <div class="flex items-center gap-2 text-indigo-600">
+                <div class="p-2 bg-indigo-600 rounded-lg">
+                    <i data-lucide="link-2" class="text-white"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight text-slate-800">UniSave</span>
+            </div>
+            <nav class="hidden md:flex gap-6 text-sm font-medium text-slate-500">
+                <a href="#" class="hover:text-indigo-600 transition-colors">Cara Kerja</a>
+                <a href="#" class="hover:text-indigo-600 transition-colors">Situs yang Didukung</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-12 flex flex-col items-center min-h-[80vh]">
+        
+        <!-- Hero Section -->
+        <div class="text-center max-w-2xl mx-auto mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+                Download Video dari <span class="text-indigo-600">Mana Saja</span>
+            </h1>
+            <p class="text-lg text-slate-600">
+                TikTok, Instagram, YouTube, Facebook, Twitter (X). Tanpa watermark, format MP4.
+            </p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="w-full max-w-3xl relative mb-12">
+            <div class="absolute inset-0 bg-indigo-200 blur-2xl opacity-20 rounded-full"></div>
+            
+            <form id="downloadForm" class="relative z-10">
+                <div class="bg-white p-2 rounded-full shadow-xl shadow-indigo-100 border border-slate-200 flex items-center transition-all focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-300">
+                    <div class="pl-4 text-slate-400">
+                        <i data-lucide="link"></i>
+                    </div>
+                    <input
+                        type="url"
+                        id="urlInput"
+                        name="url"
+                        placeholder="Tempel link video di sini..."
+                        required
+                        class="flex-grow bg-transparent border-none focus:ring-0 text-lg px-4 py-3 text-slate-800 placeholder:text-slate-400 outline-none"
+                    />
+                    <button
+                        type="submit"
+                        id="submitBtn"
+                        class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-semibold rounded-full px-8 py-3 text-lg transition-all flex items-center gap-2"
+                    >
+                        <span id="btnText">Download</span>
+                        <i id="btnIcon" data-lucide="arrow-right"></i>
+                        <!-- Spinner Icon (Hidden by default) -->
+                        <svg id="loadingSpinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Supported Logos -->
+            <div class="flex justify-center gap-6 mt-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+                <i data-lucide="youtube" class="text-red-600"></i>
+                <i data-lucide="instagram" class="text-pink-600"></i>
+                <i data-lucide="twitter" class="text-blue-400"></i>
+                <i data-lucide="facebook" class="text-blue-700"></i>
+            </div>
+        </div>
+
+        <!-- Result Container -->
+        <div id="resultContainer" class="w-full flex justify-center hidden">
+            <!-- Result Card content will be injected here via JS -->
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="w-full max-w-lg hidden">
+            <div class="bg-red-50 text-red-700 px-6 py-4 rounded-xl flex items-start gap-3 border border-red-100 animate-fade-in">
+                <i data-lucide="alert-circle" class="flex-shrink-0 mt-0.5"></i>
+                <div>
+                    <h4 class="font-semibold">Gagal memproses link</h4>
+                    <p id="errorText" class="text-sm mt-1 text-red-600 opacity-90"></p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-100 py-8 mt-auto">
+        <div class="container mx-auto px-4 text-center text-slate-400 text-sm">
+            <p>&copy; 2024 UniSave. Dibuat dengan Flask & Tailwind.</p>
+        </div>
+    </footer>
+
+    <!-- Client-side Logic -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        const form = document.getElementById('downloadForm');
+        const urlInput = document.getElementById('urlInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnIcon = document.getElementById('btnIcon');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const resultContainer = document.getElementById('resultContainer');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const url = urlInput.value.trim();
+            if (!url) return;
+
+            // UI Loading State
+            setLoading(true);
+            hideError();
+            hideResult();
+
+            try {
+                const response = await fetch('/api/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult(data);
+                } else {
+                    showError(data.error || 'Terjadi kesalahan saat mengambil video.');
+                }
+
+            } catch (err) {
+                showError('Gagal menghubungi server. Pastikan server berjalan.');
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                submitBtn.disabled = true;
+                btnText.textContent = 'Memproses...';
+                btnIcon.classList.add('hidden');
+                loadingSpinner.classList.remove('hidden');
+                urlInput.disabled = true;
+            } else {
+                submitBtn.disabled = false;
+                btnText.textContent = 'Download';
+                btnIcon.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+                urlInput.disabled = false;
+                urlInput.focus();
+            }
+        }
+
+        function showResult(data) {
+            resultContainer.innerHTML = `
+                <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 animate-fade-in-up">
+                    <div class="md:flex">
+                        <div class="md:w-2/5 relative">
+                            <img src="${data.thumbnail}" alt="${data.title}" class="w-full h-48 md:h-full object-cover">
+                        </div>
+                        <div class="md:w-3/5 p-6 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-600">
+                                        ${data.source}
+                                    </span>
+                                </div>
+                                <h3 class="text-lg font-bold text-slate-800 leading-tight mb-2 line-clamp-2">${data.title}</h3>
+                                <p class="text-slate-500 text-sm mb-4">
+                                    Oleh <span class="font-medium text-slate-700">${data.uploader}</span>
+                                    ${data.duration ? `• ${data.duration}` : ''}
+                                </p>
+                            </div>
+                            <a href="${data.download_url}" target="_blank" rel="noopener noreferrer" 
+                               class="flex items-center justify-center gap-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-xl transition-all shadow-lg shadow-indigo-200 hover:shadow-indigo-300">
+                                <i data-lucide="download" width="18"></i>
+                                Download Video (MP4)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            resultContainer.classList.remove('hidden');
+            // Re-initialize icons for the new HTML
+            lucide.createIcons();
+        }
+
+        function showError(msg) {
+            errorText.textContent = msg;
+            errorMessage.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
+
+        function hideResult() {
+            resultContainer.innerHTML = '';
+            resultContainer.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
